@@ -1,0 +1,12 @@
+server:
+  port: 8080
+  host: 0.0.0.0
+
+
+#  jdbcUrl: "jdbc:postgresql://tfb-database:5432/hello_world"
+#  jdbcUrl: "jdbc:postgresql://localhost:5432/hello_world"
+#host: "localhost"
+host: "tfb-database"
+db: "hello_world"
+username: benchmarkdbuser
+password: benchmarkdbpass
