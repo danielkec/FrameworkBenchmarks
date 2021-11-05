@@ -1,31 +1,25 @@
 package io.helidon.benchmark.services;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.LinkedList;
-
-import com.github.mustachejava.Mustache;
+import java.util.Comparator;
 
 import io.helidon.benchmark.models.DbRepository;
 import io.helidon.benchmark.models.Fortune;
+import io.helidon.benchmark.views.fortunes;
 import io.helidon.common.http.MediaType;
-import io.helidon.common.reactive.Multi;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
 import io.helidon.webserver.Service;
 
+import com.fizzed.rocker.runtime.ArrayOfByteArraysOutput;
+
 public class FortuneService implements Service {
 
     private final DbRepository repository;
-    private final Mustache template;
 
-    public FortuneService(DbRepository repository, Mustache template) {
+    public FortuneService(DbRepository repository) {
         this.repository = repository;
-        this.template = template;
     }
 
     @Override
@@ -35,20 +29,14 @@ public class FortuneService implements Service {
 
     private void fortunes(ServerRequest request, ServerResponse response) {
         response.headers().contentType(MediaType.TEXT_HTML.withCharset(StandardCharsets.UTF_8.name()));
-
-                        repository.getFortunes()
-                .forSingle(fortunes -> {
-                    fortunes.add(new Fortune(0, "Additional fortune added at request time."));
-                    try {
-                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        OutputStreamWriter writer = new OutputStreamWriter(baos, StandardCharsets.UTF_8.name());
-                        template.execute(writer, Collections.singletonMap("fortunes", fortunes));
-                        writer.flush();
-                        response.headers().contentType(MediaType.TEXT_HTML.withCharset(StandardCharsets.UTF_8.name()));
-                        response.send(baos.toByteArray());
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
+        repository.getFortunes()
+                .forSingle(fortuneList -> {
+                    fortuneList.add(new Fortune(0, "Additional fortune added at request time."));
+                    fortuneList.sort(Comparator.comparing(Fortune::getMessage));
+                    response.headers().contentType(MediaType.TEXT_HTML.withCharset(StandardCharsets.UTF_8.name()));
+                    response.send(fortunes.template(fortuneList)
+                            .render(ArrayOfByteArraysOutput.FACTORY)
+                            .toByteArray());
                 });
     }
 }

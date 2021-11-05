@@ -30,7 +30,6 @@ public class JdbcRepository implements DbRepository {
 
         poolOptions = new PoolOptions()
                 .setMaxSize(1);
-//        client = (SqlClientInternal) PgPool.client(connectOptions, poolOptions);
     }
 
     @Override

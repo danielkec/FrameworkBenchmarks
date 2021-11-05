@@ -1,20 +1,14 @@
 package io.helidon.benchmark.services;
 
-import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 
 import io.helidon.benchmark.models.DbRepository;
 import io.helidon.benchmark.models.World;
 import io.helidon.common.http.Parameters;
 import io.helidon.common.reactive.Multi;
-import io.helidon.common.reactive.Single;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -23,12 +17,9 @@ import io.helidon.webserver.Service;
 public class DbService implements Service {
 
     private final DbRepository repository;
-    private JsonBuilderFactory jsonBuilderFactory;
 
     public DbService(DbRepository repository) {
         this.repository = repository;
-
-        this.jsonBuilderFactory = Json.createBuilderFactory(Collections.emptyMap());
     }
 
     @Override
@@ -86,12 +77,5 @@ public class DbService implements Service {
             return 1;
         }
         return Math.min(500, Math.max(1, parsedValue));
-    }
-
-    private Single<JsonArray> marshall(Single<JsonObject>[] worlds) {
-        return Multi.concatArray(worlds)
-                .reduce(jsonBuilderFactory::createArrayBuilder, JsonArrayBuilder::add)
-                .map(JsonArrayBuilder::build)
-                .onError(Throwable::printStackTrace);
     }
 }

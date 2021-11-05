@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,6 @@ package io.helidon.benchmark;
 import java.io.IOException;
 import java.util.logging.LogManager;
 
-import javax.sql.DataSource;
-
 import io.helidon.benchmark.models.DbRepository;
 import io.helidon.benchmark.models.JdbcRepository;
 import io.helidon.benchmark.services.DbService;
@@ -32,16 +30,13 @@ import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
-import com.github.mustachejava.DefaultMustacheFactory;
-import com.github.mustachejava.Mustache;
-import com.github.mustachejava.MustacheFactory;
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
-
 /**
  * Simple Hello World rest application.
  */
 public final class Main {
+
+    private static final String SERVER_HEADER = "Server";
+    private static final String SERVER_NAME = "Helidon";
 
     /**
      * Cannot be instantiated.
@@ -49,23 +44,8 @@ public final class Main {
     private Main() {
     }
 
-    private static DataSource getDataSource(Config config) {
-        HikariConfig hikariConfig = new HikariConfig();
-        hikariConfig.setJdbcUrl(config.get("jdbcUrl").asString().get());
-        hikariConfig.setUsername(config.get("username").asString().get());
-        hikariConfig.setPassword(config.get("password").asString().get());
-        hikariConfig.setMaximumPoolSize(Runtime.getRuntime().availableProcessors() * 2);
-
-        return new HikariDataSource(hikariConfig);
-    }
-
     private static DbRepository getRepository(Config config) {
         return new JdbcRepository(config);
-    }
-
-    private static Mustache getTemplate() {
-        MustacheFactory mf = new DefaultMustacheFactory();
-        return mf.compile("fortunes.mustache");
     }
 
     /**
@@ -78,13 +58,13 @@ public final class Main {
 
         return Routing.builder()
                 .any((req, res) -> {
-                    res.headers().add("Server", "Helidon");
+                    res.headers().add(SERVER_HEADER, SERVER_NAME);
                     req.next();
                 })
                 .register(new JsonService())
                 .register(new PlainTextService())
                 .register(new DbService(repository))
-                .register(new FortuneService(repository, getTemplate()))
+                .register(new FortuneService(repository))
                 .build();
     }
 
@@ -104,7 +84,7 @@ public final class Main {
      * @return the created {@link WebServer} instance
      * @throws IOException if there are problems reading logging properties
      */
-    protected static WebServer startServer() throws IOException {
+    private static WebServer startServer() throws IOException {
 
         // load logging configuration
         LogManager.getLogManager().readConfiguration(
