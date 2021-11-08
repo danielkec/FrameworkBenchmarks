@@ -17,16 +17,17 @@ public class JdbcRepository implements DbRepository {
     private PgConnectOptions connectOptions = null;
     private  PoolOptions poolOptions = null;
 
-    ThreadLocal<SqlClient> client = ThreadLocal.withInitial(() -> PgPool.client(connectOptions, poolOptions));
+    public ThreadLocal<SqlClient> client = ThreadLocal.withInitial(() -> PgPool.client(connectOptions, poolOptions));
 
-    public JdbcRepository(Config config) {
+    public JdbcRepository() {
         connectOptions = new PgConnectOptions()
                 .setPort(5432)
                 .setCachePreparedStatements(true)
-                .setHost(config.get("host").asString().get())
-                .setDatabase(config.get("db").asString().get())
-                .setUser(config.get("username").asString().get())
-                .setPassword(config.get("password").asString().get());
+                .setHost("tfb-database")
+//                .setHost("localhost")
+                .setDatabase("hello_world")
+                .setUser("benchmarkdbuser")
+                .setPassword("benchmarkdbpass");
 
         poolOptions = new PoolOptions()
                 .setMaxSize(1);

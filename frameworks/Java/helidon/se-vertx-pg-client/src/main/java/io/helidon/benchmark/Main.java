@@ -19,24 +19,24 @@ package io.helidon.benchmark;
 import java.io.IOException;
 import java.util.logging.LogManager;
 
-import javax.sql.DataSource;
-
 import io.helidon.benchmark.models.DbRepository;
 import io.helidon.benchmark.models.JdbcRepository;
 import io.helidon.benchmark.services.DbService;
 import io.helidon.benchmark.services.FortuneService;
 import io.helidon.benchmark.services.JsonService;
 import io.helidon.benchmark.services.PlainTextService;
-import io.helidon.config.Config;
 import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.webserver.BareResponse;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.util.AsciiString;
+import io.opentracing.noop.NoopTracerFactory;
 
 /**
  * Simple Hello World rest application.
@@ -49,18 +49,8 @@ public final class Main {
     private Main() {
     }
 
-    private static DataSource getDataSource(Config config) {
-        HikariConfig hikariConfig = new HikariConfig();
-        hikariConfig.setJdbcUrl(config.get("jdbcUrl").asString().get());
-        hikariConfig.setUsername(config.get("username").asString().get());
-        hikariConfig.setPassword(config.get("password").asString().get());
-        hikariConfig.setMaximumPoolSize(Runtime.getRuntime().availableProcessors() * 2);
-
-        return new HikariDataSource(hikariConfig);
-    }
-
-    private static DbRepository getRepository(Config config) {
-        return new JdbcRepository(config);
+    private static DbRepository getRepository() {
+        return new JdbcRepository();
     }
 
     private static Mustache getTemplate() {
@@ -68,17 +58,14 @@ public final class Main {
         return mf.compile("fortunes.mustache");
     }
 
-    /**
-     * Creates new {@link Routing}.
-     *
-     * @return the new instance
-     */
-    private static Routing createRouting(Config config) {
-        DbRepository repository = getRepository(config);
+    private static final AsciiString SERVER = new AsciiString("Server");
+    private static final AsciiString SERVER_VAL = new AsciiString("Helidon");
 
+    private static Routing createRouting() {
+        DbRepository repository = getRepository();
         return Routing.builder()
                 .any((req, res) -> {
-                    res.headers().add("Server", "Helidon");
+                    res.headers().add(SERVER, SERVER_VAL);
                     req.next();
                 })
                 .register(new JsonService())
@@ -104,19 +91,17 @@ public final class Main {
      * @return the created {@link WebServer} instance
      * @throws IOException if there are problems reading logging properties
      */
-    protected static WebServer startServer() throws IOException {
+    static WebServer startServer() throws IOException {
 
         // load logging configuration
         LogManager.getLogManager().readConfiguration(
                 Main.class.getResourceAsStream("/logging.properties"));
 
-        // By default this will pick up application.yaml from the classpath
-        Config config = Config.create();
-
         // Build server with JSONP support
-        WebServer server = WebServer.builder(createRouting(config))
-                .config(config.get("server"))
-                .addMediaSupport(JsonpSupport.create())
+        WebServer server = WebServer.builder(createRouting())
+                .port(8080)
+//                .addMediaSupport(JsonpSupport.create())
+//                .transport(new io.helidon.webserver.transport.netty.epoll.EPollTransport())
                 .build();
 
         // Start the server and print some info.

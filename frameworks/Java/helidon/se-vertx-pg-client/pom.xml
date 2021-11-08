@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-se</artifactId>
-        <version>2.4.0</version>
+        <version>2.4.1-SNAPSHOT</version>
         <relativePath/>
     </parent>
     <groupId>io.helidon</groupId>
@@ -54,6 +54,11 @@
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver</artifactId>
         </dependency>
+<!--        <dependency>-->
+<!--            <groupId>io.helidon.webserver.transport.netty</groupId>-->
+<!--            <artifactId>helidon-webserver-transport-netty-epoll</artifactId>-->
+<!--            <version>2.4.0</version>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>io.helidon.media</groupId>
             <artifactId>helidon-media-jsonp</artifactId>
