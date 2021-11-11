@@ -1,7 +1,7 @@
 Run benchmark locally:
 
 ```bash
-# Build warp
+# Build warp app
 mvn clean package -DskipTests
 
 # Switch to repository root
