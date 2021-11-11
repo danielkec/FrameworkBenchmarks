@@ -1,5 +1,5 @@
 {
-  "framework": "warp",
+  "framework": "warp-java",
   "tests": [
     {
       "default": {
