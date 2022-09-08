@@ -16,28 +16,11 @@
 
 package io.helidon.benchmark;
 
-import com.github.mustachejava.DefaultMustacheFactory;
-import com.github.mustachejava.Mustache;
-import com.github.mustachejava.MustacheFactory;
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
-import io.helidon.benchmark.models.DbRepository;
-import io.helidon.benchmark.models.JdbcRepository;
-import io.helidon.benchmark.services.DbService;
-import io.helidon.benchmark.services.FortuneService;
-import io.helidon.benchmark.services.JsonService;
-import io.helidon.benchmark.services.PlainTextService;
-import io.helidon.config.Config;
-import io.helidon.media.jsonp.JsonpSupport;
+import java.io.IOException;
+import java.util.logging.LogManager;
+
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
-import io.reactivex.Scheduler;
-import io.reactivex.schedulers.Schedulers;
-
-import javax.sql.DataSource;
-import java.io.IOException;
-import java.util.concurrent.Executors;
-import java.util.logging.LogManager;
 
 /**
  * Simple Hello World rest application.
@@ -47,55 +30,12 @@ public final class Main {
     /**
      * Cannot be instantiated.
      */
-    private Main() { }
-
-    private static Scheduler getScheduler() {
-        return Schedulers.from(Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2));
-    }
-
-    private static DataSource getDataSource(Config config) {
-        HikariConfig hikariConfig = new HikariConfig();
-        hikariConfig.setJdbcUrl(config.get("jdbcUrl").asString().get());
-        hikariConfig.setUsername(config.get("username").asString().get());
-        hikariConfig.setPassword(config.get("password").asString().get());
-        hikariConfig.setMaximumPoolSize(Runtime.getRuntime().availableProcessors() * 2);
-
-        return new HikariDataSource(hikariConfig);
-    }
-
-    private static DbRepository getRepository(Config config) {
-        DataSource dataSource = getDataSource(config.get("dataSource"));
-        Scheduler scheduler = getScheduler();
-        return new JdbcRepository(dataSource, scheduler);
-    }
-
-    private static Mustache getTemplate() {
-        MustacheFactory mf = new DefaultMustacheFactory();
-        return mf.compile("fortunes.mustache");
-    }
-
-    /**
-     * Creates new {@link Routing}.
-     *
-     * @return the new instance
-     */
-    private static Routing createRouting(Config config) {
-        DbRepository repository = getRepository(config);
-
-        return Routing.builder()
-                .any((req, res) -> {
-                    res.headers().add("Server", "Helidon");
-                    req.next();
-                })
-                .register(new JsonService())
-                .register(new PlainTextService())
-                .register(new DbService(repository))
-                .register(new FortuneService(repository, getTemplate()))
-                .build();
+    private Main() {
     }
 
     /**
      * Application main entry point.
+     *
      * @param args command line arguments.
      * @throws IOException if there are problems reading logging properties
      */
@@ -105,6 +45,7 @@ public final class Main {
 
     /**
      * Start the server.
+     *
      * @return the created {@link WebServer} instance
      * @throws IOException if there are problems reading logging properties
      */
@@ -114,13 +55,17 @@ public final class Main {
         LogManager.getLogManager().readConfiguration(
                 Main.class.getResourceAsStream("/logging.properties"));
 
-        // By default this will pick up application.yaml from the classpath
-        Config config = Config.create();
-
-        // Build server with JSONP support
-        WebServer server = WebServer.builder(createRouting(config))
-                .config(config.get("server"))
-                .addMediaSupport(JsonpSupport.create())
+        WebServer server = WebServer.builder()
+                .port(8080)
+                .host("localhost")
+                .routing(() -> Routing.builder()
+                        .any((req, res) -> {
+                            res.headers().add("Server", "Helidon");
+                            req.next();
+                        })
+                        .get("/plaintext", (req, res) -> res.send("Hello, World!"))
+                        .build()
+                )
                 .build();
 
         // Start the server and print some info.

@@ -19,20 +19,9 @@ package io.helidon.benchmark;
 import java.io.IOException;
 import java.util.logging.LogManager;
 
-import io.helidon.benchmark.models.DbRepository;
-import io.helidon.benchmark.models.JdbcRepository;
-import io.helidon.benchmark.services.DbService;
-import io.helidon.benchmark.services.FortuneService;
-import io.helidon.benchmark.services.JsonService;
-import io.helidon.benchmark.services.PlainTextService;
 import io.helidon.config.Config;
-import io.helidon.media.jsonp.JsonpSupport;
-import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
-import com.github.mustachejava.DefaultMustacheFactory;
-import com.github.mustachejava.Mustache;
-import com.github.mustachejava.MustacheFactory;
 
 /**
  * Simple Hello World rest application.
@@ -42,39 +31,12 @@ public final class Main {
     /**
      * Cannot be instantiated.
      */
-    private Main() { }
-
-    private static DbRepository getRepository(Config config) {
-        return new JdbcRepository(config);
-    }
-
-    private static Mustache getTemplate() {
-        MustacheFactory mf = new DefaultMustacheFactory();
-        return mf.compile("fortunes.mustache");
-    }
-
-    /**
-     * Creates new {@link Routing}.
-     *
-     * @return the new instance
-     */
-    private static Routing createRouting(Config config) {
-        DbRepository repository = getRepository(config);
-
-        return Routing.builder()
-                .any((req, res) -> {
-                    res.headers().add("Server", "Helidon");
-                    req.next();
-                })
-                .register(new JsonService())
-                .register(new PlainTextService())
-                .register(new DbService(repository))
-                .register(new FortuneService(repository, getTemplate()))
-                .build();
+    private Main() {
     }
 
     /**
      * Application main entry point.
+     *
      * @param args command line arguments.
      * @throws IOException if there are problems reading logging properties
      */
@@ -84,6 +46,7 @@ public final class Main {
 
     /**
      * Start the server.
+     *
      * @return the created {@link WebServer} instance
      * @throws IOException if there are problems reading logging properties
      */
@@ -93,13 +56,18 @@ public final class Main {
         LogManager.getLogManager().readConfiguration(
                 Main.class.getResourceAsStream("/logging.properties"));
 
-        // By default this will pick up application.yaml from the classpath
-        Config config = Config.create();
-
-        // Build server with JSONP support
-        WebServer server = WebServer.builder(createRouting(config))
-                .config(config.get("server"))
-                .addMediaSupport(JsonpSupport.create())
+        WebServer server = WebServer.builder()
+                .defaultSocket(s -> s
+                        .port(8080)
+                        .host("localhost")
+                )
+                .routing(r -> r
+                        .any((req, res) -> {
+                            res.headers().add("Server", "Helidon");
+                            req.next();
+                        })
+                        .get("/plaintext", (req, res) -> res.send("Hello, World!"))
+                )
                 .build();
 
         // Start the server and print some info.
