@@ -19,7 +19,6 @@ package io.helidon.benchmark;
 import java.io.IOException;
 import java.util.logging.LogManager;
 
-import io.helidon.config.Config;
 import io.helidon.webserver.WebServer;
 
 
@@ -59,7 +58,7 @@ public final class Main {
         WebServer server = WebServer.builder()
                 .defaultSocket(s -> s
                         .port(8080)
-                        .host("localhost")
+                        .host("0.0.0.0")
                 )
                 .routing(r -> r
                         .any((req, res) -> {

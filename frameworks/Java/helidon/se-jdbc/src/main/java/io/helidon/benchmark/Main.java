@@ -19,7 +19,6 @@ package io.helidon.benchmark;
 import java.io.IOException;
 import java.util.logging.LogManager;
 
-import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
 
 /**
@@ -56,15 +55,16 @@ public final class Main {
                 Main.class.getResourceAsStream("/logging.properties"));
 
         WebServer server = WebServer.builder()
-                .port(8080)
-                .host("localhost")
-                .routing(() -> Routing.builder()
+                .defaultSocket(s -> s
+                        .port(8080)
+                        .host("0.0.0.0")
+                )
+                .routing(r -> r
                         .any((req, res) -> {
                             res.headers().add("Server", "Helidon");
                             req.next();
                         })
                         .get("/plaintext", (req, res) -> res.send("Hello, World!"))
-                        .build()
                 )
                 .build();
 
